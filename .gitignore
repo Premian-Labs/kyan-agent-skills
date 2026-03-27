@@ -1,0 +1,10 @@
+node_modules/
+dist/
+.env
+.env.local
+.env.*.local
+.mcp.json
+config.json
+*.log
+.DS_Store
+.claude/

@@ -1,0 +1,7 @@
+{
+  "name": "@kyan-skills/trading",
+  "version": "1.0.0",
+  "description": "REST API trading client for Kyan derivatives exchange",
+  "main": "src/index.ts",
+  "types": "src/index.ts"
+}

@@ -1,0 +1,7 @@
+{
+  "name": "@kyan-skills/shared",
+  "version": "1.0.0",
+  "description": "Shared types, constants, and utilities for Kyan skills",
+  "main": "src/index.ts",
+  "types": "src/index.ts"
+}

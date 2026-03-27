@@ -1,0 +1,7 @@
+{
+  "name": "@kyan-skills/account",
+  "version": "1.0.0",
+  "description": "Account management and risk monitoring for Kyan derivatives exchange",
+  "main": "src/index.ts",
+  "types": "src/index.ts"
+}

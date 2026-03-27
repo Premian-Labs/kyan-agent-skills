@@ -1,0 +1,7 @@
+{
+  "name": "@kyan-skills/websocket",
+  "version": "1.0.0",
+  "description": "WebSocket streaming client for Kyan derivatives exchange",
+  "main": "src/index.ts",
+  "types": "src/index.ts"
+}

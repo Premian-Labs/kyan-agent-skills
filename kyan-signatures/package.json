@@ -1,0 +1,10 @@
+{
+  "name": "@kyan-skills/signatures",
+  "version": "1.0.0",
+  "description": "EIP-712 signature utilities for Kyan derivatives exchange",
+  "main": "src/index.ts",
+  "types": "src/index.ts",
+  "dependencies": {
+    "viem": "^2.23.0"
+  }
+}

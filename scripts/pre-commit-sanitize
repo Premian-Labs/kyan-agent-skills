@@ -1,0 +1,124 @@
+#!/usr/bin/env bash
+# 12-point security sanitization audit (based on sanitize skill)
+# Run before committing to ensure no secrets are leaked
+
+set -uo pipefail
+
+PASS=0
+WARN=0
+FAIL=0
+
+pass() { echo "  PASS: $1"; PASS=$((PASS + 1)); }
+warn() { echo "  WARN: $1"; WARN=$((WARN + 1)); }
+fail() { echo "  FAIL: $1"; FAIL=$((FAIL + 1)); }
+
+echo "=== Kyan Skills Security Sanitization Audit ==="
+echo ""
+
+# 1. Full file audit
+echo "[1/12] File audit"
+git status --short 2>/dev/null && pass "git status reviewed" || warn "not a git repository"
+
+# 2. Private keys / mnemonics
+echo "[2/12] Private keys / mnemonics"
+if grep -rn '0x[0-9a-fA-F]\{64\}\|BEGIN PRIVATE KEY\|mnemonic\s*=\|seed phrase' --include='*.ts' --include='*.js' --include='*.json' --include='*.md' . 2>/dev/null | grep -v node_modules | grep -v '.git/' | grep -v '__tests__/' | grep -v '0xdeadbeef'; then
+  fail "Found potential private keys or mnemonics"
+else
+  pass "No private keys or mnemonics found"
+fi
+
+# 3. API keys / tokens / secrets
+echo "[3/12] API keys / tokens / secrets"
+if grep -rn 'sk-[a-zA-Z0-9]\{20,\}\|AKIA[A-Z0-9]\{16\}\|ghp_[a-zA-Z0-9]\{36\}\|glpat-[a-zA-Z0-9-]\{20\}\|xox[bpsa]-[a-zA-Z0-9-]\{10,\}\|Bearer [a-zA-Z0-9._-]\{20,\}' --include='*.ts' --include='*.js' --include='*.json' . 2>/dev/null | grep -v node_modules | grep -v '.git/'; then
+  fail "Found potential API keys or tokens"
+else
+  pass "No API keys or tokens found"
+fi
+
+# 4. .env files
+echo "[4/12] .env files"
+if git ls-files '*.env*' 2>/dev/null | grep -v '.env.example'; then
+  fail "Non-example .env files are tracked"
+else
+  pass "No .env files tracked"
+fi
+
+# 5. .mcp.json
+echo "[5/12] .mcp.json"
+if git ls-files '.mcp.json' 2>/dev/null | grep -q '.'; then
+  fail ".mcp.json is tracked (may contain plaintext keys)"
+else
+  pass ".mcp.json is not tracked"
+fi
+
+# 6. Config files with secrets
+echo "[6/12] Config files"
+if grep -rn '"api_key"\s*:\s*"[^"]\{10,\}"\|"secret"\s*:\s*"[^"]\{10,\}"\|"password"\s*:\s*"[^"]\{10,\}"' --include='config.json' --include='settings.json' --include='credentials.*' . 2>/dev/null | grep -v node_modules; then
+  fail "Config files contain secret values"
+else
+  pass "No secrets in config files"
+fi
+
+# 7. Plaintext passwords
+echo "[7/12] Plaintext passwords"
+if grep -rn 'password\s*=\s*["\x27][^"\x27]\{3,\}\|passwd\s*=\s*["\x27][^"\x27]\{3,\}\|pwd\s*=\s*["\x27][^"\x27]\{3,\}' --include='*.ts' --include='*.js' . 2>/dev/null | grep -v node_modules; then
+  fail "Found plaintext passwords"
+else
+  pass "No plaintext passwords found"
+fi
+
+# 8. RPC URLs with API keys
+echo "[8/12] RPC URLs"
+if grep -rn 'infura.io/v3/[a-f0-9]\{32\}\|alchemy.com/v2/[a-zA-Z0-9_-]\{32\}\|quiknode.pro/[a-f0-9]\{32\}\|moralis.io.*apiKey' --include='*.ts' --include='*.js' --include='*.json' . 2>/dev/null | grep -v node_modules; then
+  fail "Found RPC URLs with embedded API keys"
+else
+  pass "No RPC URLs with embedded keys"
+fi
+
+# 9. Wallet addresses (excluding dummies)
+echo "[9/12] Wallet addresses"
+ADDRS=$(grep -rn '0x[0-9a-fA-F]\{40\}' --include='*.ts' --include='*.js' . 2>/dev/null | grep -v node_modules | grep -v '0x0000000000000000000000000000000000000000\|0xaAaA\|0xdead\|0xDEAD\|0x07a7D6b723d0aa62cD78da00452Ba3cD3b72C3d7' || true)
+if [ -n "$ADDRS" ]; then
+  echo "$ADDRS"
+  warn "Found wallet addresses — verify they are not production wallets"
+else
+  pass "No suspicious wallet addresses"
+fi
+
+# 10. Console.log leaks
+echo "[10/12] Console.log leaks"
+if grep -rn 'console\.log.*\(api_key\|api_secret\|apiKey\|apiSecret\|secret_key\|password\|private_key\|privateKey\|mnemonic\)' --include='*.ts' --include='*.js' . 2>/dev/null | grep -v node_modules | grep -v '__tests__/'; then
+  fail "Console.log statements expose sensitive data"
+else
+  pass "No sensitive console.log statements"
+fi
+
+# 11. .gitignore coverage
+echo "[11/12] .gitignore coverage"
+MISSING=""
+for PATTERN in ".env" ".env.local" ".mcp.json" "node_modules"; do
+  if ! grep -q "$PATTERN" .gitignore 2>/dev/null; then
+    MISSING="$MISSING $PATTERN"
+  fi
+done
+if [ -n "$MISSING" ]; then
+  fail ".gitignore missing:$MISSING"
+else
+  pass ".gitignore has required entries"
+fi
+
+# 12. Test file credentials
+echo "[12/12] Test file credentials"
+if grep -rn 'sk-[a-zA-Z0-9]\{20,\}\|AKIA[A-Z0-9]\{16\}\|ghp_' --include='*.test.*' --include='*.spec.*' . 2>/dev/null | grep -v node_modules; then
+  fail "Test files contain production API keys"
+else
+  pass "No production keys in test files"
+fi
+
+echo ""
+echo "=== Results: $PASS passed, $WARN warnings, $FAIL failures ==="
+
+if [ "$FAIL" -gt 0 ]; then
+  echo "BLOCKED: Fix failures before committing."
+  exit 1
+fi

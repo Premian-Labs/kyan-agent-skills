@@ -1,0 +1,10 @@
+{
+  "mcpServers": {
+    "kyan": {
+      "url": "https://docs.kyan.blue/mcp",
+      "headers": {
+        "x-apikey": "YOUR_API_KEY"
+      }
+    }
+  }
+}
