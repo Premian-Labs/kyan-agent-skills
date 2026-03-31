@@ -30,7 +30,7 @@ claude mcp add kyan --transport streamable-http https://docs.kyan.blue/mcp
 
 ### 3. Get an API key
 
-Contact the Premia team via [Discord](https://discord.gg/premia), email, or [premia.io](https://premia.io) to obtain an API key.
+Contact the Kyan team via [Discord](https://discord.gg/kyan), email, or [kyan.blue](https://kyan.blue) to obtain an API key.
 
 ## API Endpoints
 
