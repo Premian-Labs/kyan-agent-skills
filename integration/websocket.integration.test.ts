@@ -215,7 +215,8 @@ describe.skipIf(!hasApiKey)(
       );
       expect(snapshot).toBeDefined();
       console.log(
-        `  Orderbook event (${snapshot.type}):`,
+        "  Orderbook event (%s):",
+        snapshot.type,
         JSON.stringify(snapshot).slice(0, 300),
       );
     });

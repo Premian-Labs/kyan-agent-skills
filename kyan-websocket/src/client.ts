@@ -122,7 +122,7 @@ export class KyanWebSocket {
         try {
           handler(data);
         } catch (err) {
-          console.error(`[KyanWS] Error in handler for "${eventType}":`, err);
+          console.error("[KyanWS] Error in handler for %s:", eventType, err);
         }
       }
     }
